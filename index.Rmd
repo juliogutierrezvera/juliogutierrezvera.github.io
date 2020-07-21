@@ -1,5 +1,89 @@
 ---
-title: "My Website"
+title: "Ejercicio - Seguro diferido vitalicio"
+author: "Julio Gutiérrez"
+date: "19/7/2020"
+output:
+  html_document: default
+  pdf_document: default
 ---
+## Ejercicio 
 
-Hello, Website!
+Determina la prima que actualmente debe gastar un hombre invalido de 40 años para un monto asegurado de 200mil soles, si éste será efectivo desde que cumpla 60 años. La tasa del seguro es de 2% semestral. 
+
+#### Transformando la TESemestral a TEAnual
+
+```{r}
+ia=(1.02^2-1)
+```
+ 
+#### Planteamiento de solución mediante tabla: 
+ 
+```{r}
+library(lifecontingencies)
+
+Tabla1 = read.table("C:/Users/julgutierrez/OneDrive - International Organization for Migration - IOM/Personal documents/MAESTRIA/Acturial/TMSPP2017.txt",T)
+
+#tabla para hombre invalido en el 2020
+Tabla1 = probs2lifetable(probs = Tabla1$SPPI2017H*(1-Tabla1$AaxH)^3, radix = 10^6,   type = "qx",  name = "Tabla 1") 
+i      = ia
+x      = 40
+m      = 20 #periodo de años que tiene que vivir
+n      = 110-60 #maximo n al que llega
+q      = NULL
+v      = NULL
+q[1]   = pxt(Tabla1, x = x, t = m)*qxt(Tabla1, x = x+m, t = 1)
+v[1]   = 1/(1+i)^(m+1) #m+1 pasa el periodo
+for(j in 1:(n)){ #función para cada uno de los valores
+q[j+1] = pxt(Tabla1, x = x, t = m+j)*qxt(Tabla1, x = x+m+j, t = 1)
+v[j+1] = 1/(1+i)^(m+j+1)
+}
+sum(q) #No suma uno porque estamos considerando de 60 años para adelante, la persona puede fallecer en el intervalo de 40 a 60.
+```
+#### Tabla de probabilidades y valores presentes 
+
+```{r}
+(DiferidoV = data.frame(v = c(v,0), Prob = c(q,1-sum(q))))
+```
+
+#### **Graficando la distribución de la tabla anterior**
+
+Algunos valores que se pueden identificar:
+1. El 18% de las personas no tendrían que pagar nada, porque van a fallecer antes de los 60 años.
+2. El valor presenta más se va a dar con probabilidad de 0.03. Eso quiere decir que el 3% tendría que pagar 0.23 para recibir un sol en el futuro.
+
+```{r}
+library(ggplot2)
+grafico = ggplot(DiferidoV, aes(x = v, y = Prob)) + 
+  geom_histogram(stat ="identity",fill = "steelblue1") +
+  labs(x = "Valor presente", y = "Probabilidad", title = "Distribución del VP para un seguro diferido vitalicio (x=55, m=10)") + 
+  theme_bw()
+#install.packages("plotly")
+library(plotly)
+ggplotly(grafico)
+```
+
+Una vez observó la tabla anterior, planteamos un promedio para la suma de valores de las probabilidades
+
+```{r}
+(VPA   = sum(DiferidoV$v*DiferidoV$Prob))
+```
+
+Comprobando el valor a partir de la función Axn
+
+```{r}
+#0.2010619
+Axn(Tabla1,x=40,m=20,i=0.0404)
+
+```
+
+
+Desarrollando el calculo para que la persona pueda recibir 200mil soles:
+
+```{r}
+VF=200000*VPA
+VF
+```
+
+### **Conclusión**
+
+Para que los beneficirarios de un hombre invalido en el 2020 que tenga 40 años, con un seguro diferido vitalicio que se hará efectivo cuando 60 años, pueda recibir 200 mil soles tiene que invertir 40212.38 soles.

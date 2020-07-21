@@ -9,9 +9,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
+<meta name="author" content="Julio Gutiérrez" />
 
 
-<title>My Website</title>
+<title>Ejercicio - Seguro diferido vitalicio</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -22,6 +23,13 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/htmlwidgets-1.5.1/htmlwidgets.js"></script>
+<script src="site_libs/plotly-binding-4.9.2.1/plotly.js"></script>
+<script src="site_libs/typedarray-0.1/typedarray.min.js"></script>
+<link href="site_libs/crosstalk-1.1.0.1/css/crosstalk.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.1.0.1/js/crosstalk.min.js"></script>
+<link href="site_libs/plotly-htmlwidgets-css-1.52.2/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="site_libs/plotly-main-1.52.2/plotly-latest.min.js"></script>
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css">
@@ -289,12 +297,153 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">My Website</h1>
+<h1 class="title toc-ignore">Ejercicio - Seguro diferido vitalicio</h1>
+<h4 class="author">Julio Gutiérrez</h4>
+<h4 class="date">19/7/2020</h4>
 
 </div>
 
 
-<p>Hello, Website!</p>
+<div id="ejercicio" class="section level2">
+<h2>Ejercicio</h2>
+<p>Determina la prima que actualmente debe gastar un hombre invalido de 40 años para un monto asegurado de 200mil soles, si éste será efectivo desde que cumpla 60 años. La tasa del seguro es de 2% semestral.</p>
+<div id="transformando-la-tesemestral-a-teanual" class="section level4">
+<h4>Transformando la TESemestral a TEAnual</h4>
+<pre class="r"><code>ia=(1.02^2-1)</code></pre>
+</div>
+<div id="planteamiento-de-solución-mediante-tabla" class="section level4">
+<h4>Planteamiento de solución mediante tabla:</h4>
+<pre class="r"><code>library(lifecontingencies)</code></pre>
+<pre><code>## Package:  lifecontingencies
+## Authors:  Giorgio Alfredo Spedicato [aut, cre]
+##     (&lt;https://orcid.org/0000-0002-0315-8888&gt;),
+##   Christophe Dutang [ctb] (&lt;https://orcid.org/0000-0001-6732-1501&gt;),
+##   Reinhold Kainhofer [ctb] (&lt;https://orcid.org/0000-0002-7895-1311&gt;),
+##   Kevin J Owens [ctb],
+##   Ernesto Schirmacher [ctb],
+##   Gian Paolo Clemente [ctb] (&lt;https://orcid.org/0000-0001-6795-4595&gt;),
+##   Ivan Williams [ctb]
+## Version:  1.3.6
+## Date:     2019-03-05 23:50:03 UTC
+## BugReport: http://github.com/spedygiorgio/lifecontingencies/issues</code></pre>
+<pre class="r"><code>Tabla1 = read.table(&quot;C:/Users/julgutierrez/OneDrive - International Organization for Migration - IOM/Personal documents/MAESTRIA/Acturial/TMSPP2017.txt&quot;,T)
+
+#tabla para hombre invalido en el 2020
+Tabla1 = probs2lifetable(probs = Tabla1$SPPI2017H*(1-Tabla1$AaxH)^3, radix = 10^6,   type = &quot;qx&quot;,  name = &quot;Tabla 1&quot;) 
+i      = ia
+x      = 40
+m      = 20 #periodo de años que tiene que vivir
+n      = 110-60 #maximo n al que llega
+q      = NULL
+v      = NULL
+q[1]   = pxt(Tabla1, x = x, t = m)*qxt(Tabla1, x = x+m, t = 1)
+v[1]   = 1/(1+i)^(m+1) #m+1 pasa el periodo
+for(j in 1:(n)){ #función para cada uno de los valores
+q[j+1] = pxt(Tabla1, x = x, t = m+j)*qxt(Tabla1, x = x+m+j, t = 1)
+v[j+1] = 1/(1+i)^(m+j+1)
+}
+sum(q) #No suma uno porque estamos considerando de 60 años para adelante, la persona puede fallecer en el intervalo de 40 a 60.</code></pre>
+<pre><code>## [1] 0.8187305</code></pre>
+</div>
+<div id="tabla-de-probabilidades-y-valores-presentes" class="section level4">
+<h4>Tabla de probabilidades y valores presentes</h4>
+<pre class="r"><code>(DiferidoV = data.frame(v = c(v,0), Prob = c(q,1-sum(q))))</code></pre>
+<pre><code>##             v         Prob
+## 1  0.43530413 1.663953e-02
+## 2  0.41840074 1.778140e-02
+## 3  0.40215373 1.895971e-02
+## 4  0.38653761 2.016367e-02
+## 5  0.37152788 2.138079e-02
+## 6  0.35710100 2.255085e-02
+## 7  0.34323433 2.374927e-02
+## 8  0.32990613 2.491409e-02
+## 9  0.31709547 2.602701e-02
+## 10 0.30478227 2.706878e-02
+## 11 0.29294720 2.827326e-02
+## 12 0.28157170 2.921955e-02
+## 13 0.27063793 2.999586e-02
+## 14 0.26012873 3.063337e-02
+## 15 0.25002761 3.111162e-02
+## 16 0.24031874 3.154654e-02
+## 17 0.23098687 3.163986e-02
+## 18 0.22201737 3.151993e-02
+## 19 0.21339616 3.117520e-02
+## 20 0.20510973 3.059850e-02
+## 21 0.19714507 3.055495e-02
+## 22 0.18948968 2.940172e-02
+## 23 0.18213157 2.802396e-02
+## 24 0.17505918 2.644137e-02
+## 25 0.16826142 2.468044e-02
+## 26 0.16172762 2.328840e-02
+## 27 0.15544754 2.114593e-02
+## 28 0.14941132 1.894707e-02
+## 29 0.14360950 1.673881e-02
+## 30 0.13803297 1.456781e-02
+## 31 0.13267298 1.275946e-02
+## 32 0.12752113 1.068264e-02
+## 33 0.12256932 8.780939e-03
+## 34 0.11780981 7.078497e-03
+## 35 0.11323511 5.589549e-03
+## 36 0.10883805 4.428817e-03
+## 37 0.10461174 3.309199e-03
+## 38 0.10054954 2.410873e-03
+## 39 0.09664508 1.710061e-03
+## 40 0.09289223 1.179167e-03
+## 41 0.08928511 8.068872e-04
+## 42 0.08581806 5.160048e-04
+## 43 0.08248564 3.188236e-04
+## 44 0.07928262 1.899671e-04
+## 45 0.07620398 1.089376e-04
+## 46 0.07324489 6.000012e-05
+## 47 0.07040070 3.167154e-05
+## 48 0.06766696 1.598669e-05
+## 49 0.06503937 7.698605e-06
+## 50 0.06251381 3.528438e-06
+## 51 0.06008632 2.549264e-06
+## 52 0.00000000 1.812695e-01</code></pre>
+</div>
+<div id="graficando-la-distribución-de-la-tabla-anterior" class="section level4">
+<h4><strong>Graficando la distribución de la tabla anterior</strong></h4>
+<p>Algunos valores que se pueden identificar: 1. El 18% de las personas no tendrían que pagar nada, porque van a fallecer antes de los 60 años. 2. El valor presenta más se va a dar con probabilidad de 0.03. Eso quiere decir que el 3% tendría que pagar 0.23 para recibir un sol en el futuro.</p>
+<pre class="r"><code>library(ggplot2)
+grafico = ggplot(DiferidoV, aes(x = v, y = Prob)) + 
+  geom_histogram(stat =&quot;identity&quot;,fill = &quot;steelblue1&quot;) +
+  labs(x = &quot;Valor presente&quot;, y = &quot;Probabilidad&quot;, title = &quot;Distribución del VP para un seguro diferido vitalicio (x=55, m=10)&quot;) + 
+  theme_bw()</code></pre>
+<pre><code>## Warning: Ignoring unknown parameters: binwidth, bins, pad</code></pre>
+<pre class="r"><code>#install.packages(&quot;plotly&quot;)
+library(plotly)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;plotly&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:ggplot2&#39;:
+## 
+##     last_plot</code></pre>
+<pre><code>## The following object is masked from &#39;package:stats&#39;:
+## 
+##     filter</code></pre>
+<pre><code>## The following object is masked from &#39;package:graphics&#39;:
+## 
+##     layout</code></pre>
+<pre class="r"><code>ggplotly(grafico)</code></pre>
+<div id="htmlwidget-3db14a3da1998712bf38" style="width:672px;height:480px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-3db14a3da1998712bf38">{"x":{"data":[{"orientation":"v","width":[0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251456,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251459,0.00218473861251458],"base":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"x":[0.435304128397959,0.41840073856013,0.402153727950913,0.386537608564891,0.371527882126962,0.357101001659902,0.343234334544312,0.329906127012987,0.317095470024017,0.30478226645907,0.292947199595415,0.281571702802206,0.270637930413501,0.260128729732315,0.250027614121795,0.240318737141287,0.230986867686743,0.222017366096446,0.213396161184589,0.205109728166656,0.197145067441999,0.189489684200307,0.182131568819979,0.175059178027662,0.168261416789371,0.161727620904817,0.155447540277602,0.149411322835065,0.143609499072535,0.138032967197746,0.13267297885212,0.127521125386505,0.122569324669844,0.117809808410076,0.113235109967394,0.108838052640709,0.104611738408986,0.100549537109752,0.096645076037824,0.0928922299479277,0.0892851114455284,0.0858180617507962,0.082485641821219,0.079282623818934,0.0762039829093945,0.073244889378503,0.0704007010558468,0.067666956032148,0.065039365659504,0.0625138078234372,0.0600863204761987,0],"y":[0.016639532734701,0.0177813953395727,0.0189597114316354,0.0201636730314762,0.0213807861867837,0.0225508508290096,0.023749265097447,0.0249140922337136,0.0260270116598493,0.0270687766458122,0.0282732586757277,0.0292195487044498,0.0299958582853112,0.0306333712372319,0.0311116226663788,0.0315465443211605,0.031639861031054,0.0315199314993671,0.0311752032172789,0.0305985045854299,0.030554947772986,0.0294017202543399,0.0280239612662265,0.0264413678749451,0.0246804352392066,0.0232884032892159,0.0211459272139218,0.0189470712966979,0.0167388144820844,0.0145678147265101,0.0127594613820309,0.010682636251,0.00878093905398373,0.00707849675361221,0.00558954878900657,0.00442881718894897,0.00330919879503276,0.00241087349379497,0.00171006115458426,0.00117916727147932,0.000806887246807574,0.000516004834892347,0.000318823627193117,0.00018996710575746,0.000108937553509852,6.00001216064572e-05,3.16715409988719e-05,1.5986691296296e-05,7.69860460435993e-06,3.52843838441419e-06,2.54926411127888e-06,0.18126948200784],"text":["v: 0.43530413<br />Prob: 1.663953e-02","v: 0.41840074<br />Prob: 1.778140e-02","v: 0.40215373<br />Prob: 1.895971e-02","v: 0.38653761<br />Prob: 2.016367e-02","v: 0.37152788<br />Prob: 2.138079e-02","v: 0.35710100<br />Prob: 2.255085e-02","v: 0.34323433<br />Prob: 2.374927e-02","v: 0.32990613<br />Prob: 2.491409e-02","v: 0.31709547<br />Prob: 2.602701e-02","v: 0.30478227<br />Prob: 2.706878e-02","v: 0.29294720<br />Prob: 2.827326e-02","v: 0.28157170<br />Prob: 2.921955e-02","v: 0.27063793<br />Prob: 2.999586e-02","v: 0.26012873<br />Prob: 3.063337e-02","v: 0.25002761<br />Prob: 3.111162e-02","v: 0.24031874<br />Prob: 3.154654e-02","v: 0.23098687<br />Prob: 3.163986e-02","v: 0.22201737<br />Prob: 3.151993e-02","v: 0.21339616<br />Prob: 3.117520e-02","v: 0.20510973<br />Prob: 3.059850e-02","v: 0.19714507<br />Prob: 3.055495e-02","v: 0.18948968<br />Prob: 2.940172e-02","v: 0.18213157<br />Prob: 2.802396e-02","v: 0.17505918<br />Prob: 2.644137e-02","v: 0.16826142<br />Prob: 2.468044e-02","v: 0.16172762<br />Prob: 2.328840e-02","v: 0.15544754<br />Prob: 2.114593e-02","v: 0.14941132<br />Prob: 1.894707e-02","v: 0.14360950<br />Prob: 1.673881e-02","v: 0.13803297<br />Prob: 1.456781e-02","v: 0.13267298<br />Prob: 1.275946e-02","v: 0.12752113<br />Prob: 1.068264e-02","v: 0.12256932<br />Prob: 8.780939e-03","v: 0.11780981<br />Prob: 7.078497e-03","v: 0.11323511<br />Prob: 5.589549e-03","v: 0.10883805<br />Prob: 4.428817e-03","v: 0.10461174<br />Prob: 3.309199e-03","v: 0.10054954<br />Prob: 2.410873e-03","v: 0.09664508<br />Prob: 1.710061e-03","v: 0.09289223<br />Prob: 1.179167e-03","v: 0.08928511<br />Prob: 8.068872e-04","v: 0.08581806<br />Prob: 5.160048e-04","v: 0.08248564<br />Prob: 3.188236e-04","v: 0.07928262<br />Prob: 1.899671e-04","v: 0.07620398<br />Prob: 1.089376e-04","v: 0.07324489<br />Prob: 6.000012e-05","v: 0.07040070<br />Prob: 3.167154e-05","v: 0.06766696<br />Prob: 1.598669e-05","v: 0.06503937<br />Prob: 7.698605e-06","v: 0.06251381<br />Prob: 3.528438e-06","v: 0.06008632<br />Prob: 2.549264e-06","v: 0.00000000<br />Prob: 1.812695e-01"],"type":"bar","marker":{"autocolorscale":false,"color":"rgba(99,184,255,1)","line":{"width":1.88976377952756,"color":"transparent"}},"showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":43.7625570776256,"r":7.30593607305936,"b":40.1826484018265,"l":48.9497716894977},"plot_bgcolor":"rgba(255,255,255,1)","paper_bgcolor":"rgba(255,255,255,1)","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"title":{"text":"Distribución del VP para un seguro diferido vitalicio (x=55, m=10)","font":{"color":"rgba(0,0,0,1)","family":"","size":17.5342465753425},"x":0,"xref":"paper"},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-0.022966812656781,0.45827094105474],"tickmode":"array","ticktext":["0.0","0.1","0.2","0.3","0.4"],"tickvals":[0,0.1,0.2,0.3,0.4],"categoryorder":"array","categoryarray":["0.0","0.1","0.2","0.3","0.4"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.65296803652968,"tickwidth":0.66417600664176,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y","title":{"text":"Valor presente","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-0.00906347410039198,0.190332956108232],"tickmode":"array","ticktext":["0.00","0.05","0.10","0.15"],"tickvals":[0,0.05,0.1,0.15],"categoryorder":"array","categoryarray":["0.00","0.05","0.10","0.15"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.65296803652968,"tickwidth":0.66417600664176,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":{"text":"Probabilidad","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":"transparent","line":{"color":"rgba(51,51,51,1)","width":0.66417600664176,"linetype":"solid"},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":false,"legend":{"bgcolor":"rgba(255,255,255,1)","bordercolor":"transparent","borderwidth":1.88976377952756,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.689497716895}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","showSendToCloud":false},"source":"A","attrs":{"55cc5ddd1056":{"x":{},"y":{},"type":"bar"}},"cur_data":"55cc5ddd1056","visdat":{"55cc5ddd1056":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<p>Una vez observó la tabla anterior, planteamos un promedio para la suma de valores de las probabilidades</p>
+<pre class="r"><code>(VPA   = sum(DiferidoV$v*DiferidoV$Prob))</code></pre>
+<pre><code>## [1] 0.2010619</code></pre>
+<p>Comprobando el valor a partir de la función Axn</p>
+<pre class="r"><code>#0.2010619
+Axn(Tabla1,x=40,m=20,i=0.0404)</code></pre>
+<pre><code>## [1] 0.2010619</code></pre>
+<p>Desarrollando el calculo para que la persona pueda recibir 200mil soles:</p>
+<pre class="r"><code>VF=200000*VPA
+VF</code></pre>
+<pre><code>## [1] 40212.38</code></pre>
+</div>
+<div id="conclusión" class="section level3">
+<h3><strong>Conclusión</strong></h3>
+<p>Para que los beneficirarios de un hombre invalido en el 2020 que tenga 40 años, con un seguro diferido vitalicio que se hará efectivo cuando 60 años, pueda recibir 200 mil soles tiene que invertir 40212.38 soles.</p>
+</div>
+</div>
 
 
 
